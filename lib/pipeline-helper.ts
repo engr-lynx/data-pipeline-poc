@@ -73,6 +73,10 @@ export interface YarnSynthActionProps extends BasePipelineHelperProps, BuildConf
   sourceCode: Artifact,
 }
 
+// ToDo: optimize:
+//   runtimes
+//   docker image cache
+//   node libraries cache
 export function buildYarnSynthAction (scope: Stack, yarnSynthActionProps: YarnSynthActionProps) {
   const prefix = yarnSynthActionProps.prefix??'';
   const cloudAssembly = new Artifact('CloudAssembly');
