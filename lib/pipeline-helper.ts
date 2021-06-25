@@ -80,6 +80,7 @@ export function buildYarnSynthAction (scope: Stack, yarnSynthActionProps: YarnSy
   const environment = {
     buildImage: LinuxBuildImage.AMAZON_LINUX_2_3,
     computeType,
+    privileged: true,
   };
   const actionName = prefix + 'Synth';
   const action = SimpleSynthAction.standardYarnSynth({
