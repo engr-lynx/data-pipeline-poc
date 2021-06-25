@@ -1,0 +1,30 @@
+<!doctype html>
+<html class="no-js" lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Cloud Architecture Diagrams</title>
+    <meta name="description" content="Cloud Architecture Diagrams">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <h3>Templates to be Deployed</h3>
+    <ul id="templates"></ul>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="js/jquery-{{JQUERY_VERSION}}.min.js"><\/script>')</script>
+    <script>
+      const url = 'templates.json';
+      $.ajax({
+        type: 'GET',
+        url,
+        dataType: 'json',
+        success: function(templates) {
+          templates.forEach(template => {
+            $("#templates").append('<li><a href="' + template + '/index.html" target="_blank">' + template + '</a></li>');            
+          });
+        },
+        async: false
+      });
+    </script>
+  </body>
+</html>

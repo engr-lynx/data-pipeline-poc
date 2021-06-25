@@ -1,0 +1,16 @@
+archi:
+  id: DataPipelinePocPipeline
+  pipeline:
+    repo:
+      type: CodeCommit
+      name: data-pipeline-poc
+      create: true
+    build:
+      compute: Small
+    validate:
+      compute: Small
+      emails:
+      - techie@lynx.rocks
+dataPipeline:
+  network:
+    azCount: 2
