@@ -9,11 +9,12 @@ export class StreamStack extends Stack {
 
   constructor(scope: Construct, id: string, streamProps: StreamProps) {
     super(scope, id, streamProps);
-    const inStream = new Stream(this, "InStream");
-    const outStream = new Stream(this, "OutStream");
+    const inStream = new Stream(this, "InStream"); // ToDo: replace with Firehose
+    const outStream = new Stream(this, "OutStream"); // ToDo: replace with Flink writer
+    const code = ApplicationCode.fromAsset(join(__dirname, 'flink-processor'))
     const flinkApp = new Application(this, 'FlinkApp', {
-      code: ApplicationCode.fromAsset(join(__dirname, 'code-asset')),
-      runtime: Runtime.FLINK_1_11,
+      code,
+      runtime: Runtime.FLINK_1_11, // ToDo: Python -> Flink
     });
   }
 
