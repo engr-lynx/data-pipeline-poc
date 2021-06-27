@@ -1,6 +1,5 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
 import { NetworkStack } from './network-stack';
-import { PipelineCacheStack } from './pipeline-cache-stack';
 import { DataPipelineConf } from './context-helper';
 
 /**
@@ -15,7 +14,6 @@ export class CloudDeployStage extends Stage {
     const dataPipelineNetwork = new NetworkStack(this, 'DataPipelineNetwork', {
       ...dataPipelineConf.network,
     });
-    const pipelineCache = new PipelineCacheStack(this, 'PipelineCache');
   }
 
 }

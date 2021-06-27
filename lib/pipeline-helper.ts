@@ -2,11 +2,10 @@ import { join } from 'path';
 import { Stack, SecretValue, Duration } from '@aws-cdk/core';
 import { Artifact } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeCommitSourceAction, CodeBuildAction, CodeBuildActionType, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
-import { SimpleSynthAction } from '@aws-cdk/pipelines';
 import { Repository } from '@aws-cdk/aws-codecommit';
 import { PipelineProject, ComputeType, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Repository as EcrRepository, AuthorizationToken } from '@aws-cdk/aws-ecr';
-import { Bucket } from '@aws-cdk/aws-s3';
+import { IBucket } from '@aws-cdk/aws-s3';
 import { Asset } from '@aws-cdk/aws-s3-assets';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python';
 import { PolicyStatement } from '@aws-cdk/aws-iam';
@@ -71,39 +70,86 @@ export function buildRepoSourceAction (scope: Stack, repoSourceActionProps: Repo
 
 export interface YarnSynthActionProps extends BasePipelineHelperProps, BuildConf {
   sourceCode: Artifact,
+  cacheBucket: IBucket,
 }
 
-// ToDo: optimize:
-//   runtimes
-//   docker image cache
-//   node libraries cache
 export function buildYarnSynthAction (scope: Stack, yarnSynthActionProps: YarnSynthActionProps) {
   const prefix = yarnSynthActionProps.prefix??'';
-  const cloudAssembly = new Artifact('CloudAssembly');
+  const cloudAssemblyId = prefix + 'CloudAssembly';
+  const cloudAssembly = new Artifact(cloudAssemblyId);
+  const runtimes = {
+    nodejs: 12,
+    docker: 19,
+  };
+  const installCommands = [
+    'yarn install',
+  ];
+  const prebuildCommands = [
+    'npx yaml2json cdk.context.yaml > cdk.context.json',
+  ];
+  const buildCommands = [
+    'npx cdk synth',
+  ];
+  const synthSpec = BuildSpec.fromObjectToYaml({
+    version: '0.2',
+    phases: {
+      install: {
+        'runtime-versions': runtimes,
+        commands: installCommands,
+      },
+      pre_build: {
+        commands: prebuildCommands,
+      },
+      build: {
+        commands: buildCommands,
+      },
+    },
+    artifacts: {
+      'base-directory': './cdk.out',
+      files: [
+        '**/*',
+      ],
+    },
+    cache: {
+      paths: [
+        './node_modules/**/*',
+      ],
+    },
+  });
   const computeType = mapCompute(yarnSynthActionProps.compute);
   const environment = {
     buildImage: LinuxBuildImage.AMAZON_LINUX_2_3,
     computeType,
     privileged: true,
   };
-  const actionName = prefix + 'Synth';
-  const action = SimpleSynthAction.standardYarnSynth({
-    actionName,
-    sourceArtifact: yarnSynthActionProps.sourceCode,
-    cloudAssemblyArtifact: cloudAssembly,
-    buildCommand: 'npx yaml2json cdk.context.yaml > cdk.context.json',
+  const projectId = prefix + 'SynthProject';
+  const cache = Cache.bucket(yarnSynthActionProps.cacheBucket, {
+    prefix: projectId,
+  });
+  const synthProject = new PipelineProject(scope, projectId, {
+    buildSpec: synthSpec,
     environment,
+    cache,
+  });
+  const actionName = prefix + 'Synth';
+  const action = new CodeBuildAction({
+    actionName,
+    project: synthProject,
+    input: yarnSynthActionProps.sourceCode,
+    outputs: [
+      cloudAssembly,
+    ],
   });
   return {
     action,
     cloudAssembly,
-  }
+  };
 }
 
 export interface ArchiValidateActionProps extends BasePipelineHelperProps, ValidateConf {
   cloudAssembly: Artifact,
   runOrder?: number,
-  cacheBucket: Bucket,
+  cacheBucket: IBucket,
 }
 
 export function buildArchiValidateAction (scope: Stack, archiValidateActionProps: ArchiValidateActionProps) {
@@ -195,7 +241,7 @@ export function buildArchiValidateAction (scope: Stack, archiValidateActionProps
     action,
     source: diagramsSite.source,
     distribution: diagramsSite.distribution,
-  }
+  };
 }
 
 export interface ContBuildActionProps extends BasePipelineHelperProps, BuildConf {
@@ -217,7 +263,7 @@ export function buildContBuildAction (scope: Stack, contBuildActionProps: ContBu
   };
   const runtimes = {
     ...contBuildActionProps.runtimes,
-    docker: 20.10,
+    docker: 19,
   };
   const prebuildCommands = [];
   prebuildCommands.push(...contBuildActionProps.prebuildCommands??[]);
@@ -284,7 +330,7 @@ export interface DroidBuildActionProps extends BasePipelineHelperProps, BuildCon
   envVar?: KeyValue,
   prebuildCommands?: string[];
   postbuildCommands?: string[];
-  cacheBucket: Bucket,
+  cacheBucket: IBucket,
 }
 
 export function buildDroidBuildAction (scope: Stack, droidBuildActionProps: DroidBuildActionProps) {
@@ -378,7 +424,7 @@ export function buildDroidBuildAction (scope: Stack, droidBuildActionProps: Droi
 export interface CustomActionProps extends BasePipelineHelperProps, StageConf {
   type?: CodeBuildActionType,
   input: Artifact,
-  cacheBucket: Bucket,
+  cacheBucket: IBucket,
 }
 
 export function buildCustomAction (scope: Stack, customActionProps: CustomActionProps) {

@@ -12,12 +12,14 @@ export class RepoCloudPipelineStack extends Stack {
 
   constructor(scope: Construct, id: string, repoCloudPipelineProps: RepoCloudPipelineProps) {
     super(scope, id, repoCloudPipelineProps);
+    const cacheBucket = new Bucket(this, 'CacheBucket');
     const { action: repoAction, sourceCode } = buildRepoSourceAction(this, {
       ...repoCloudPipelineProps.repo,
     });
     const { action: synthAction, cloudAssembly } = buildYarnSynthAction(this, {
       ...repoCloudPipelineProps.build,
       sourceCode,
+      cacheBucket,
     });
     const repoCloudPipeline = new CdkPipeline(this, 'RepoCloudPipeline', {
       cloudAssemblyArtifact: cloudAssembly,
@@ -26,7 +28,6 @@ export class RepoCloudPipelineStack extends Stack {
     });
     // This is where we add the application stages
     // ...
-    const cacheBucket = new Bucket(this, 'CacheBucket');
     if (repoCloudPipelineProps.validate) {
       const validateStage = repoCloudPipeline.addStage('Validate');
       const { action: validateAction, source, distribution } = buildArchiValidateAction(this, {
