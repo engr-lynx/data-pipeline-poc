@@ -1,4 +1,4 @@
-import { Construct, Stack, StackProps } from '@aws-cdk/core';
+import { Construct, Stack, StackProps, PhysicalName } from '@aws-cdk/core';
 import { CdkPipeline } from '@aws-cdk/pipelines';
 import { Bucket } from '@aws-cdk/aws-s3';
 import { ManualApprovalAction } from '@aws-cdk/aws-codepipeline-actions';
@@ -12,7 +12,9 @@ export class RepoCloudPipelineStack extends Stack {
 
   constructor(scope: Construct, id: string, repoCloudPipelineProps: RepoCloudPipelineProps) {
     super(scope, id, repoCloudPipelineProps);
-    const cacheBucket = new Bucket(this, 'CacheBucket');
+    const cacheBucket = new Bucket(this, 'CacheBucket', {
+      bucketName: PhysicalName.GENERATE_IF_NEEDED,
+    });
     const { action: repoAction, sourceCode } = buildRepoSourceAction(this, {
       ...repoCloudPipelineProps.repo,
     });
@@ -58,7 +60,9 @@ export class RepoCloudPipelineStack extends Stack {
       distribution.grantInvalidate(cleanupFunc);
       validateStage.addActions(validateAction, approvalAction, cleanupAction);
     };
-    const deploy = new CloudDeployStage(this, 'Deploy');
+    const deploy = new CloudDeployStage(this, 'Deploy', {
+      cacheBucketArn: cacheBucket.bucketArn,
+    });
     repoCloudPipeline.addApplicationStage(deploy);
   }
 
