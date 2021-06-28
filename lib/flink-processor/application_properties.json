@@ -1,0 +1,25 @@
+[
+  {
+  "PropertyGroupId": "kinesis.analytics.flink.run.options",
+  "PropertyMap": {
+    "python": "getting-started.py",
+    "jarfile": "lib/amazon-kinesis-sql-connector-flink-2.0.3.jar"
+   }
+  },
+  {
+    "PropertyGroupId": "consumer.config.0",
+    "PropertyMap": {
+      "input.stream.name": "InStream",
+      "flink.stream.initpos": "LATEST",
+      "aws.region": "ap-southeast-1"
+    }
+  },
+  {
+    "PropertyGroupId": "producer.config.0",
+    "PropertyMap": {
+      "output.stream.name": "OutStream",
+      "shard.count": "1",
+      "aws.region": "ap-southeast-1"
+    }
+  }
+]

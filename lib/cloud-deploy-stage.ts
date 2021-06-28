@@ -1,5 +1,6 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
 import { NetworkStack } from './network-stack';
+import { StreamStack } from './stream-stack';
 import { DataPipelineConf } from './context-helper';
 
 interface CloudDeployProps extends StageProps {
@@ -15,9 +16,10 @@ export class CloudDeployStage extends Stage {
     super(scope, id, cloudDeployProps);
     const dataPipelineContext = this.node.tryGetContext('dataPipeline');
     const dataPipelineConf = dataPipelineContext as DataPipelineConf;
-    const dataPipelineNetwork = new NetworkStack(this, 'DataPipelineNetwork', {
+    const dataPipelineNetwork = new NetworkStack(this, 'StreamNetwork', {
       ...dataPipelineConf.network,
     });
+    new StreamStack(this, 'StreamProcessor');
   }
 
 }
